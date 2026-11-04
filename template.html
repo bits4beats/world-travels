@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Travels</title>
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌍%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --sea: #cfe8f5;
+    --ink: #1f2933;
+    --panel: #ffffffee;
+    --accent: #d6336c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(ellipse at center, #e3f3fb 0%, #b9dcee 100%);
+  }
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 5;
+    padding: 12px 20px; pointer-events: none;
+  }
+  header h1 {
+    margin: 0; font-size: 1.6rem; letter-spacing: .04em;
+    text-shadow: 0 1px 0 #fff, 0 0 8px #fff;
+  }
+  header p { margin: 2px 0 0; font-size: .8rem; opacity: .7; }
+
+  #map { width: 100%; height: 100%; display: block; cursor: grab; }
+  #map.dragging { cursor: grabbing; }
+  .sphere { fill: url(#seaGradient); }
+  #map.globe .sphere { fill: url(#oceanGlobe); filter: drop-shadow(0 0 14px #5aa0d0aa) drop-shadow(0 6px 18px #0b2a4455); }
+  .shine { fill: url(#shineGlobe); pointer-events: none; display: none; }
+  #map.globe .shine { display: inline; }
+  .graticule { fill: none; stroke: #ffffff; stroke-opacity: .5; stroke-width: .5; vector-effect: non-scaling-stroke; }
+  .country {
+    stroke: #fff; stroke-width: .6; vector-effect: non-scaling-stroke;
+    cursor: pointer; transition: filter .15s;
+  }
+  .country:hover { filter: brightness(1.12) saturate(1.2); stroke: #333; stroke-width: 1.2; }
+  .country.visited { stroke-width: 1.3; filter: url(#visGlow); }
+  .country.visited:hover { filter: url(#visGlow) brightness(1.1) saturate(1.15); stroke-width: 1.8; }
+
+  .pin { cursor: pointer; }
+  .pin .pulse {
+    fill: var(--accent); opacity: .35; transform-origin: 0 0;
+    animation: pulse 2s ease-out infinite;
+  }
+  .pin .head { fill: var(--accent); stroke: #fff; stroke-width: 1.5; }
+  .pin .dot { fill: #fff; }
+  @keyframes pulse {
+    0%   { transform: scale(.6); opacity: .5; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+
+  #tooltip {
+    position: fixed; z-index: 6; pointer-events: none; display: none;
+    background: #1f2933e6; color: #fff; padding: 5px 10px; border-radius: 6px;
+    font-size: .85rem; white-space: nowrap;
+  }
+  #tooltip .v { color: #8ce99a; margin-left: 6px; }
+
+  #legend {
+    position: fixed; left: 14px; bottom: 14px; z-index: 5;
+    background: var(--panel); border-radius: 10px; padding: 10px 14px;
+    box-shadow: 0 2px 10px #0003; max-width: 260px; font-size: .85rem;
+  }
+  #legend h2 { margin: 0 0 6px; font-size: .95rem; }
+  #legend .count { font-weight: 700; color: var(--accent); }
+  #legend ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 28vh; overflow-y: auto; }
+  #legend li a { color: inherit; text-decoration: none; display: block; padding: 2px 0; cursor: pointer; }
+  #legend li a:hover { color: var(--accent); text-decoration: underline; }
+  #legend .key { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; font-size: .75rem; opacity: .8; }
+
+  #zoomctl {
+    position: fixed; right: 14px; bottom: 14px; z-index: 5; display: flex; flex-direction: column; gap: 6px;
+  }
+  #zoomctl button {
+    width: 36px; height: 36px; border: 0; border-radius: 8px; background: var(--panel);
+    box-shadow: 0 2px 8px #0003; font-size: 1.2rem; cursor: pointer;
+  }
+  #zoomctl button:hover { background: #fff; }
+
+  /* Popup */
+  #overlay {
+    position: fixed; inset: 0; z-index: 10; display: none;
+    background: #0008; align-items: center; justify-content: center; padding: 20px;
+  }
+  #overlay.open { display: flex; }
+  #modal {
+    background: #fff; border-radius: 14px; width: min(760px, 100%); max-height: 88vh;
+    display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px #0006;
+    position: relative;
+  }
+  #modal .head {
+    display: flex; align-items: center; gap: 16px; padding: 18px 56px 14px 22px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  #modal .flag {
+    width: 84px; height: 56px; object-fit: cover; border-radius: 4px;
+    box-shadow: 0 1px 4px #0004; background: #eee; flex: none;
+  }
+  #modal .flag.none { display: none; }
+  #modal h2 { margin: 0; font-size: 1.6rem; }
+  #modal .links { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  #modal .wiki { font-size: .9rem; color: #1c6ed5; }
+  #modal .badge { font-size: .75rem; color: #2b8a3e; font-weight: 600; }
+  #close {
+    position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border: 0;
+    border-radius: 50%; background: #f1f3f5; font-size: 1.3rem; line-height: 1; cursor: pointer;
+  }
+  #close:hover { background: #e03131; color: #fff; }
+  #notes { padding: 16px 22px 24px; overflow-y: auto; line-height: 1.55; }
+  #notes img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+  #notes h1, #notes h2, #notes h3 { margin: 1em 0 .4em; }
+  #notes .empty { color: #868e96; font-style: italic; }
+  #notes table { border-collapse: collapse; }
+  #notes td, #notes th { border: 1px solid #ddd; padding: 4px 8px; }
+  #notes code { background: #f1f3f5; padding: 1px 5px; border-radius: 4px; }
+  #notes blockquote { margin: 8px 0; padding-left: 12px; border-left: 4px solid #ced4da; color: #495057; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>World Travels</h1>
+  <p id="hint"></p>
+</header>
+
+<svg id="map" role="img" aria-label="World map">
+  <defs>
+    <linearGradient id="seaGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9effa"/>
+      <stop offset="1" stop-color="#a9d3ea"/>
+    </linearGradient>
+    <radialGradient id="oceanGlobe" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#cdeaf9"/>
+      <stop offset=".65" stop-color="#8cc3e3"/>
+      <stop offset="1" stop-color="#4f8fbf"/>
+    </radialGradient>
+    <radialGradient id="shineGlobe" cx="36%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
+      <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".85" stop-color="#0b2a44" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#0b2a44" stop-opacity=".35"/>
+    </radialGradient>
+    <!-- glow for visited countries -->
+    <filter id="visGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0.6" stdDeviation="1.6" flood-color="#5a2a00" flood-opacity=".55"/>
+    </filter>
+    <!-- gradients vis-1…vis-7 are added by the script -->
+  </defs>
+  <g id="viewport">
+    <path class="sphere" id="sphere"></path>
+    <path class="graticule" id="graticule"></path>
+    <g id="countries"></g>
+    <path class="shine" id="shine"></path>
+    <g id="pins"></g>
+  </g>
+</svg>
+
+<div id="tooltip"></div>
+
+<div id="legend">
+  <h2>Visited: <span class="count" id="vcount"></span></h2>
+  <div class="key">
+    <span>📍 highlighted = visited</span>
+    <span>light grey = yet to discover</span>
+  </div>
+  <ul id="vlist"></ul>
+</div>
+
+<div id="zoomctl">
+  <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+  <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+  <button id="zreset" title="Reset view" aria-label="Reset view">⟲</button>
+  <button id="zmode"></button>
+</div>
+
+<div id="overlay" aria-hidden="true">
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button id="close" aria-label="Close">×</button>
+    <div class="head">
+      <img class="flag" id="mFlag" alt="">
+      <div>
+        <h2 id="mTitle"></h2>
+        <div class="links">
+          <a class="wiki" id="mWiki" target="_blank" rel="noopener">Open on Wikipedia ↗</a>
+          <a class="wiki" id="mMaps" target="_blank" rel="noopener">Open on Google Maps ↗</a>
+        </div>
+        <div class="badge" id="mBadge"></div>
+      </div>
+    </div>
+    <div id="notes"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const GEO = __GEO__;
+const NOTES = __NOTES__;   // { ISO2: "<html>" } — only countries that have a notes/<ISO2>.md file
+
+// Palette: full (visited) vs muted (still to discover), indexed by MAPCOLOR7 (1..7)
+const FULL  = [null, "#f4a261", "#e9c46a", "#8ecf8e", "#6fb5e6", "#c79be0", "#f28b9b", "#7fd1c4"];
+// Not visited: full colour faded towards light grey (only a hint of colour remains)
+const MUTED = FULL.map(c => c && d3.interpolateRgb(c, "#eef1f3")(0.75));
+
+// Visited: vertical gradient per colour (raised look) + darker border
+const defs = d3.select("#map defs");
+FULL.forEach((c, i) => {
+  if (!c) return;
+  const g = defs.append("linearGradient").attr("id", `vis-${i}`).attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 1);
+  g.append("stop").attr("offset", 0).attr("stop-color", d3.color(c).brighter(0.5));
+  g.append("stop").attr("offset", 1).attr("stop-color", d3.color(c).darker(0.4));
+});
+const visFill = c => FULL[c] ? `url(#vis-${c})` : "#ccc";
+const visStroke = c => d3.color(FULL[c] || "#999").darker(1.3);
+
+const W = 960, H = 500;
+const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio", "xMidYMid meet");
+const viewport = d3.select("#viewport");
+
+// --- Projections ----------------------------------------------------------
+const INIT_ROT = [-12, -35, 0];               // globe centred on Europe
+const R0 = Math.min(W, H) / 2 - 14;           // globe radius at zoom 1
+const flatProj = d3.geoNaturalEarth1().fitSize([W, H], {type: "Sphere"});
+const globeProj = d3.geoOrthographic().clipAngle(90).translate([W / 2, H / 2]).scale(R0).rotate(INIT_ROT);
+const path = d3.geoPath();
+let mode = null;          // "globe" | "flat"
+let projection = null;
+let gk = 1;               // globe zoom
+let flatK = 1;            // flat map zoom (for the pins)
+
+const visited = id => Object.prototype.hasOwnProperty.call(NOTES, id);
+const features = GEO.features;
+const byId = new Map(features.map(f => [f.properties.id, f]));
+// Pin point [lon, lat]: Natural Earth label point, otherwise the centroid
+// Country names shown in English
+features.forEach(f => {
+  const p = f.properties;
+  p.name = p.name_en || p.name;
+  f.pinLL = (p.lx != null && p.ly != null) ? [p.lx, p.ly] : d3.geoCentroid(f);
+});
+
+const sphere = viewport.select("#sphere").datum({type: "Sphere"});
+const graticule = viewport.select("#graticule").datum(d3.geoGraticule10());
+const shine = viewport.select("#shine").datum({type: "Sphere"});
+const tip = document.getElementById("tooltip");
+
+const countries = viewport.select("#countries").selectAll("path")
+  // visited countries last, so border and glow sit above their neighbours
+  .data([...features].sort((a, b) => visited(a.properties.id) - visited(b.properties.id))).join("path")
+  .attr("class", d => "country" + (visited(d.properties.id) ? " visited" : ""))
+  .attr("fill", d => visited(d.properties.id) ? visFill(d.properties.color) : (MUTED[d.properties.color] || "#e5e7e9"))
+  .each(function (d) { if (visited(d.properties.id)) this.style.stroke = visStroke(d.properties.color); })
+  .on("mousemove", (ev, d) => {
+    tip.style.display = "block";
+    tip.style.left = (ev.clientX + 14) + "px";
+    tip.style.top = (ev.clientY + 14) + "px";
+    tip.innerHTML = esc(d.properties.name) + (visited(d.properties.id) ? '<span class="v">✓ visited</span>' : "");
+  })
+  .on("mouseleave", () => { tip.style.display = "none"; })
+  .on("click", (ev, d) => { if (!ev.defaultPrevented) openCountry(d); });
+
+// --- Pins for visited countries -------------------------------------------
+const visitedFeatures = features.filter(f => visited(f.properties.id));
+const pins = viewport.select("#pins").selectAll("g.pin")
+  .data(visitedFeatures).join("g")
+  .attr("class", "pin")
+  .on("click", (ev, d) => { ev.stopPropagation(); openCountry(d); })
+  .each(function (d) {
+    const g = d3.select(this);
+    g.append("circle").attr("class", "pulse").attr("r", 7);
+    g.append("path").attr("class", "head")
+      .attr("d", "M0,0 C-3,-6 -7,-9 -7,-14 A7,7 0 1 1 7,-14 C7,-9 3,-6 0,0 Z");
+    g.append("circle").attr("class", "dot").attr("cy", -14).attr("r", 2.6);
+    g.append("title").text(d.properties.name);
+  });
+
+function placePins() {
+  const s = mode === "flat" ? 0.8 / flatK : 0.8;
+  const r = globeProj.rotate();
+  const center = [-r[0], -r[1]];
+  pins.each(function (d) {
+    const hidden = mode === "globe" && d3.geoDistance(d.pinLL, center) > Math.PI / 2 - 0.05;
+    const pt = projection(d.pinLL);
+    this.style.display = hidden || !pt ? "none" : null;
+    if (!hidden && pt) this.setAttribute("transform", `translate(${pt[0]},${pt[1]}) scale(${s.toFixed(4)})`);
+  });
+}
+
+// --- Rendering -------------------------------------------------------------
+function render() {
+  path.projection(projection);
+  sphere.attr("d", path);
+  graticule.attr("d", path);
+  shine.attr("d", path);
+  countries.attr("d", path);
+  placePins();
+}
+let rafPending = false;
+function scheduleRender() {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => { rafPending = false; render(); });
+}
+
+// --- Flat map: d3.zoom (pan + wheel) ------------------------------------
+const zoom = d3.zoom()
+  .scaleExtent([1, 60])
+  .translateExtent([[0, 0], [W, H]])
+  .on("start", () => svg.classed("dragging", true))
+  .on("end", () => svg.classed("dragging", false))
+  .on("zoom", ev => {
+    viewport.attr("transform", ev.transform);
+    flatK = ev.transform.k;
+    placePins();
+  });
+
+// --- Globe: drag to rotate, wheel to zoom -------------------------------
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function setGlobeZoom(k) {
+  gk = clamp(k, 1, 20);
+  globeProj.scale(R0 * gk);
+}
+const drag = d3.drag()
+  .on("start", () => { svg.classed("dragging", true); tip.style.display = "none"; })
+  .on("end", () => svg.classed("dragging", false))
+  .on("drag", ev => {
+    const r = globeProj.rotate();
+    const s = 0.25 / gk;
+    globeProj.rotate([r[0] + ev.dx * s, clamp(r[1] - ev.dy * s, -90, 90), r[2]]);
+    scheduleRender();
+  });
+function onWheel(ev) {
+  ev.preventDefault();
+  setGlobeZoom(gk * Math.pow(2, -ev.deltaY * 0.002));
+  scheduleRender();
+}
+
+// Animate the globe towards a target rotation/zoom
+function animateGlobe(toRot, toK, ms = 800) {
+  const from = globeProj.rotate();
+  const target = [toRot[0], toRot[1], 0];
+  // shortest path in longitude
+  while (target[0] - from[0] > 180) target[0] -= 360;
+  while (target[0] - from[0] < -180) target[0] += 360;
+  const ir = d3.interpolate(from, target), ik = d3.interpolate(gk, toK);
+  return svg.transition().duration(ms).tween("globe", () => t => {
+    globeProj.rotate(ir(t));
+    setGlobeZoom(ik(t));
+    render();
+  }).end().catch(() => {});
+}
+
+// --- View switch ----------------------------------------------------------
+const toggleBtn = document.getElementById("zmode");
+const hint = document.getElementById("hint");
+// Favicon follows the active view (🌍 globe, 🗺️ flat map)
+function setFavicon(emoji) {
+  const svgIcon = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
+  document.getElementById("favicon").href = "data:image/svg+xml," + encodeURIComponent(svgIcon);
+}
+function setMode(m) {
+  mode = m;
+  svg.interrupt();
+  svg.classed("globe", m === "globe").classed("flat", m === "flat");
+  if (m === "globe") {
+    svg.on(".zoom", null);
+    viewport.attr("transform", null);
+    svg.call(drag).on("wheel.globe", onWheel, {passive: false});
+    projection = globeProj;
+    toggleBtn.textContent = "🗺️";
+    setFavicon("🌍");
+    toggleBtn.title = toggleBtn.ariaLabel = "Switch to flat map";
+    hint.textContent = "Drag to rotate · scroll to zoom · click a country";
+  } else {
+    svg.on(".drag", null).on("wheel.globe", null);
+    projection = flatProj;
+    flatK = 1;
+    svg.call(zoom).on("dblclick.zoom", null);
+    svg.call(zoom.transform, d3.zoomIdentity);
+    toggleBtn.textContent = "🌍";
+    setFavicon("🗺️");
+    toggleBtn.title = toggleBtn.ariaLabel = "Switch to globe";
+    hint.textContent = "Drag to pan · scroll to zoom · click a country";
+  }
+  try { localStorage.setItem("wt-view", m); } catch (e) {}
+  render();
+}
+toggleBtn.onclick = () => setMode(mode === "globe" ? "flat" : "globe");
+
+// --- Zoom buttons ---------------------------------------------------------
+function zoomBy(f) {
+  if (mode === "flat") svg.transition().duration(250).call(zoom.scaleBy, f);
+  else animateGlobe(globeProj.rotate(), clamp(gk * f, 1, 20), 250);
+}
+document.getElementById("zin").onclick = () => zoomBy(1.8);
+document.getElementById("zout").onclick = () => zoomBy(1 / 1.8);
+document.getElementById("zreset").onclick = () => {
+  if (mode === "flat") svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+  else animateGlobe(INIT_ROT, 1, 700);
+};
+
+// Bring a country to the centre of the view
+function goTo(f) {
+  if (mode === "globe") {
+    const [[w, s], [e, n]] = d3.geoBounds(f);
+    const span = Math.max((e < w ? e + 360 : e) - w, n - s);
+    return animateGlobe([-f.pinLL[0], -f.pinLL[1]], clamp(60 / (span + 4), 1, 8));
+  }
+  const [[x0, y0], [x1, y1]] = path.bounds(f);
+  const k = Math.max(1, Math.min(12, 0.6 / Math.max((x1 - x0) / W, (y1 - y0) / H)));
+  const t = d3.zoomIdentity.translate(W / 2, H / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+  return svg.transition().duration(700).call(zoom.transform, t).end().catch(() => {});
+}
+
+// --- Legend ---------------------------------------------------------------
+document.getElementById("vcount").textContent = `${visitedFeatures.length} / ${features.length}`;
+const vlist = document.getElementById("vlist");
+[...visitedFeatures].sort((a, b) => a.properties.name.localeCompare(b.properties.name, "en")).forEach(f => {
+  const li = document.createElement("li");
+  const a = document.createElement("a");
+  a.textContent = "📍 " + f.properties.name;
+  a.onclick = async () => { await goTo(f); openCountry(f); };
+  li.appendChild(a);
+  vlist.appendChild(li);
+});
+
+// --- Popup ----------------------------------------------------------------
+const overlay = document.getElementById("overlay");
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function openCountry(f) {
+  const p = f.properties;
+  tip.style.display = "none";
+  document.getElementById("mTitle").textContent = p.name;
+  const flag = document.getElementById("mFlag");
+  if (p.flag) {
+    flag.className = "flag";
+    flag.alt = "Flag of " + p.name;
+    flag.onerror = () => { flag.className = "flag none"; };
+    flag.src = `https://flagcdn.com/w320/${p.flag.toLowerCase()}.png`;
+  } else {
+    flag.className = "flag none";
+    flag.removeAttribute("src");
+  }
+  document.getElementById("mWiki").href =
+    "https://en.wikipedia.org/wiki/" + encodeURIComponent(p.name.replace(/ /g, "_"));
+  document.getElementById("mMaps").href =
+    "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.name_en || p.name);
+  document.getElementById("mBadge").textContent = visited(p.id) ? "✓ Visited" : "";
+  const notes = document.getElementById("notes");
+  notes.innerHTML = visited(p.id)
+    ? NOTES[p.id]
+    : `<p class="empty">Yet to discover. To add notes, create <code>notes/${esc(p.id)}.md</code> and run <code>./build.sh</code>.</p>`;
+  notes.scrollTop = 0;
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+}
+function closePopup() {
+  overlay.classList.remove("open");
+  overlay.setAttribute("aria-hidden", "true");
+}
+document.getElementById("close").onclick = closePopup;
+overlay.addEventListener("click", e => { if (e.target === overlay) closePopup(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePopup(); });
+
+// --- Startup ----------------------------------------------------------------
+// View: ?view=flat|globe in the URL, else the last choice, else the globe
+let initial = new URLSearchParams(location.search).get("view");
+if (initial !== "flat" && initial !== "globe") {
+  try { initial = localStorage.getItem("wt-view"); } catch (e) { initial = null; }
+}
+setMode(initial === "flat" ? "flat" : "globe");
+
+// Direct link: index.html#IT centres the country and opens its popup
+const hashId = decodeURIComponent(location.hash.slice(1)).toUpperCase();
+if (hashId && byId.has(hashId)) {
+  const f = byId.get(hashId);
+  if (mode === "globe") {
+    globeProj.rotate([-f.pinLL[0], -f.pinLL[1], 0]);
+    render();
+  }
+  openCountry(f);
+}
+</script>
+</body>
+</html>

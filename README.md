@@ -1,93 +1,60 @@
 # World Travels
 
+A static HTML page with a **rotating globe** and a **flat world map**. Drag to rotate (or pan), scroll to zoom, and click a country to see its name, flag, links to Wikipedia and Google Maps, and your own notes.
 
+**Visited** countries (the ones that have a notes file) are highlighted with full colour, a gradient, a darker border and a 📍 pin; all other countries are light grey. The list of visited countries is in the bottom-left corner: click a name to centre the map on that country and open its popup.
 
-## Getting started
+The 🗺️/🌍 button in the bottom-right corner switches between the globe and the flat map, and the browser remembers your choice. You can also force a view from the URL with `index.html?view=globe` or `index.html?view=flat`.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Requirements
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/bits4beats/world-travels.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-* [Set up project integrations](https://gitlab.com/bits4beats/world-travels/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Only **Docker**. Python and its dependencies run inside a container (`python:3.12-slim`).
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```bash
+./build.sh        # regenerates index.html
+```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Then open `index.html` in your browser (a double click is enough, no server needed) and reload the page after each rebuild.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+## Adding notes to a country
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+1. Create `notes/<CODE>.md`, where `<CODE>` is the country's two-letter ISO code (e.g. `notes/IT.md`, `notes/FR.md`, `notes/JP.md`). A country's code is shown in its popup while it has no notes yet.
+2. Write in Markdown (headings, lists, quotes, tables, images...).
+3. For images, copy them into `notes/images/` and reference them with a relative path:
+   ```markdown
+   ![Colosseum](notes/images/colosseum.jpg)
+   ```
+   The image line must not be inside a code block (```` ``` ````), or it is shown as plain text.
+4. Run `./build.sh` and reload the page.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+You can link directly to a country with `index.html#IT` (on the globe, the country is brought to the centre).
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## When to rebuild
 
-## License
-For open source projects, say how it is licensed.
+Run `./build.sh` only when the content embedded in `index.html` changes:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- **Run it** when you add, edit or delete a note (`notes/XX.md`). Note text is copied into `index.html`, so without a rebuild the page keeps showing the old version.
+- **Run it** after changing `template.html` or `data/countries.geojson` (rarely needed).
+- **No rebuild for images.** `index.html` only stores the image path (e.g. `notes/images/IT_01.jpg`), and the browser loads the file every time the page opens.
+  - Replacing an image with one of the same name: just reload the page (use Ctrl+F5 if the browser still shows the cached version).
+  - Adding a new image: you need a rebuild anyway, but only because of the new `![...](...)` line in the `.md` file.
+- Changes to `Dockerfile` or `requirements.txt` need no extra step: `build.sh` rebuilds the Docker image on every run, and this is quick when nothing has changed.
+
+## Project layout
+
+| File | Purpose |
+| --- | --- |
+| `build.sh` | Builds the Docker image and runs `build.py` inside it |
+| `build.py` | Converts the Markdown notes and generates `index.html` |
+| `template.html` | Page source (CSS + JS) |
+| `data/countries.geojson` | Country borders (Natural Earth 1:50m, public domain) |
+| `notes/` | One Markdown note per country, images in `notes/images/` |
+| `index.html` | Generated page (do not edit by hand) |
+
+## Technical notes
+
+- The map is drawn with [D3](https://d3js.org/) (loaded from cdnjs) and flags come from [flagcdn.com](https://flagcdn.com), so an internet connection is needed to see them.
+- Country colours follow Natural Earth's `MAPCOLOR7` property, which is designed so that neighbouring countries never share a colour.
+- Large images make the page heavier to load: resizing photos (e.g. to 1600 px wide) before adding them is recommended.
