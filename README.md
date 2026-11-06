@@ -1,3 +1,5 @@
+<p align="center"><img src="favicon.png" width="128" alt="World Travels"></p>
+
 # World Travels
 
 A static HTML page with a **rotating globe** and a **flat world map**. Drag to rotate (or pan), scroll to zoom, and click a country to see its name, flag, links to Wikipedia and Google Maps, and your own notes.
@@ -85,6 +87,7 @@ Run `./build.sh` only when the content embedded in `index.html` changes:
 | `template.html` | Page source (CSS + JS) |
 | `data/countries.geojson` | Country borders (Natural Earth 1:50m, public domain) |
 | `notes/` | Example notes (one Markdown file per country), images in `notes/images/`; your own notes live in a separate data folder |
+| `favicon.png` | Page favicon and project logo, embedded into `index.html` at build time |
 | `index.html` | Generated page (do not edit by hand) |
 
 ## Technical notes

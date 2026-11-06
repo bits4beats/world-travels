@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>World Travels</title>
-<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌍%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="__FAVICON__">
+<link rel="apple-touch-icon" href="__FAVICON__">
 <style>
   :root {
     --sea: #cfe8f5;
@@ -359,11 +360,6 @@ function animateGlobe(toRot, toK, ms = 800) {
 // --- View switch ----------------------------------------------------------
 const toggleBtn = document.getElementById("zmode");
 const hint = document.getElementById("hint");
-// Favicon follows the active view (🌍 globe, 🗺️ flat map)
-function setFavicon(emoji) {
-  const svgIcon = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
-  document.getElementById("favicon").href = "data:image/svg+xml," + encodeURIComponent(svgIcon);
-}
 function setMode(m) {
   mode = m;
   svg.interrupt();
@@ -374,7 +370,6 @@ function setMode(m) {
     svg.call(drag).on("wheel.globe", onWheel, {passive: false});
     projection = globeProj;
     toggleBtn.textContent = "🗺️";
-    setFavicon("🌍");
     toggleBtn.title = toggleBtn.ariaLabel = "Switch to flat map";
     hint.textContent = "Drag to rotate · scroll to zoom · click a country";
   } else {
@@ -384,7 +379,6 @@ function setMode(m) {
     svg.call(zoom).on("dblclick.zoom", null);
     svg.call(zoom.transform, d3.zoomIdentity);
     toggleBtn.textContent = "🌍";
-    setFavicon("🗺️");
     toggleBtn.title = toggleBtn.ariaLabel = "Switch to globe";
     hint.textContent = "Drag to pan · scroll to zoom · click a country";
   }

@@ -6,6 +6,7 @@ Usage: build.py [DATA_DIR]
 DATA_DIR holds your own notes/ folder and receives the generated index.html.
 It defaults to the repository root (which contains the example notes).
 """
+import base64
 import json
 import re
 import sys
@@ -16,6 +17,7 @@ import markdown
 ROOT = Path(__file__).resolve().parent
 GEO_FILE = ROOT / "data" / "countries.geojson"
 TEMPLATE = ROOT / "template.html"
+FAVICON = ROOT / "favicon.png"
 
 
 def js_json(obj) -> str:
@@ -52,8 +54,11 @@ def main() -> int:
         notes[code] = html
 
     template = TEMPLATE.read_text(encoding="utf-8")
-    page = template.replace("__GEO__", js_json(geo)).replace("__NOTES__", js_json(notes))
-    if re.search(r"__(GEO|NOTES)__", page):
+    favicon = "data:image/png;base64," + base64.b64encode(FAVICON.read_bytes()).decode("ascii")
+    page = (template.replace("__GEO__", js_json(geo))
+                    .replace("__NOTES__", js_json(notes))
+                    .replace("__FAVICON__", favicon))
+    if re.search(r"__(GEO|NOTES|FAVICON)__", page):
         print("Error: placeholders were not replaced", file=sys.stderr)
         return 1
     output.write_text(page, encoding="utf-8")
