@@ -8,6 +8,10 @@ A static HTML page with a **rotating globe** and a **flat world map**. Drag to r
 
 The 🗺️/🌍 button in the bottom-right corner switches between the globe and the flat map, and the browser remembers your choice. You can also force a view from the URL with `index.html?view=globe` or `index.html?view=flat`.
 
+## Screenshot
+
+![Logo](social_preview.png)
+
 ## Requirements
 
 Only **Docker**. Python and its dependencies run inside a container (`python:3.12-slim`).
