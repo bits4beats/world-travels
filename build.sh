@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates index.html inside a Python container: only Docker is needed locally.
 # Usage: ./build.sh [DATA_DIR]
-#   DATA_DIR  folder containing your notes/ (and receiving index.html).
+#   DATA_DIR  folder containing your notes/ (index.html is written to notes/index.html).
 #             Defaults to this repository (example notes).
 set -euo pipefail
 
@@ -35,4 +35,4 @@ docker run --rm \
   "${MOUNT_ARGS[@]}" \
   "$IMAGE" \
   "${CMD_ARGS[@]}"
-echo "Output: $DATA/index.html"
+echo "Output: $DATA/notes/index.html"

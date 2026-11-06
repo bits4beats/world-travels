@@ -6,7 +6,7 @@ Macerata is a hill town in the Marche region, in central Italy, and the capital 
 its province. With about 40,000 inhabitants, it is a small, elegant university city
 with a long cultural tradition.
 
-![The historic centre of Macerata](notes/images/IT_01.jpg)
+![The historic centre of Macerata](images/IT_01.jpg)
 
 *Photo: Abraham Sobkowski OFM, public domain, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:PanoramaMaceraty2010b.jpg).*
 

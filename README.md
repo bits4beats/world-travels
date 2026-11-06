@@ -19,11 +19,11 @@ Only **Docker**. Python and its dependencies run inside a container (`python:3.1
 ## Usage
 
 ```bash
-./build.sh              # builds the example notes in this repo -> ./index.html
-./build.sh ~/my-travels # builds your own notes folder -> ~/my-travels/index.html
+./build.sh              # builds the example notes in this repo -> ./notes/index.html
+./build.sh ~/my-travels # builds your own notes folder -> ~/my-travels/notes/index.html
 ```
 
-Then open `index.html` in your browser (a double click is enough, no server needed) and reload the page after each rebuild.
+Then open `notes/index.html` in your browser (a double click is enough, no server needed) and reload the page after each rebuild.
 
 The notes shipped in this repo (`notes/IT.md`) are only an **example**. To keep your own trips private, see [Keeping your own notes private](#keeping-your-own-notes-private).
 
@@ -31,14 +31,14 @@ The notes shipped in this repo (`notes/IT.md`) are only an **example**. To keep 
 
 1. Create `notes/<CODE>.md`, where `<CODE>` is the country's two-letter ISO code (e.g. `notes/IT.md`, `notes/FR.md`, `notes/JP.md`). A country's code is shown in its popup while it has no notes yet.
 2. Write in Markdown (headings, lists, quotes, tables, images...).
-3. For images, copy them into `notes/images/` and reference them with a relative path:
+3. For images, copy them into `notes/images/` and reference them with a path relative to the note, so Markdown editors can preview them too:
    ```markdown
-   ![Colosseum](notes/images/colosseum.jpg)
+   ![Colosseum](images/colosseum.jpg)
    ```
    The image line must not be inside a code block (```` ``` ````), or it is shown as plain text.
 4. Run `./build.sh` and reload the page.
 
-You can link directly to a country with `index.html#IT` (on the globe, the country is brought to the centre).
+You can link directly to a country with `notes/index.html#IT` (on the globe, the country is brought to the centre).
 
 ## Keeping your own notes private
 
@@ -53,13 +53,13 @@ This repository is meant to be public and contains only the engine plus an examp
        images/
          FR_01.jpg
    ```
-   Notes and images work exactly as described above; image paths stay relative (`notes/images/FR_01.jpg`).
+   Notes and images work exactly as described above; image paths stay relative to the note (`images/FR_01.jpg`).
 2. Build from the engine, passing the folder:
    ```bash
    ./build.sh ~/my-travels
    ```
-   The page is written to `~/my-travels/index.html`: open that file. Nothing is written inside the engine repo.
-3. Commit `notes/` to your private repo. `index.html` can be committed too (handy to open it anywhere) or ignored, since it can always be regenerated.
+   The page is written to `~/my-travels/notes/index.html`: open that file. Nothing is written inside the engine repo.
+3. Commit `notes/` to your private repo. `notes/index.html` can be committed too (handy to open it anywhere) or ignored, since it can always be regenerated.
 
 **Optional: engine as a submodule.** Inside your private repo you can embed this one and update it whenever you like:
 
@@ -77,10 +77,17 @@ Run `./build.sh` only when the content embedded in `index.html` changes:
 
 - **Run it** when you add, edit or delete a note (`notes/XX.md`). Note text is copied into `index.html`, so without a rebuild the page keeps showing the old version.
 - **Run it** after changing `template.html` or `data/countries.geojson` (rarely needed).
-- **No rebuild for images.** `index.html` only stores the image path (e.g. `notes/images/IT_01.jpg`), and the browser loads the file every time the page opens.
+- **No rebuild for images.** `index.html` only stores the image path (e.g. `images/IT_01.jpg`), and the browser loads the file every time the page opens.
   - Replacing an image with one of the same name: just reload the page (use Ctrl+F5 if the browser still shows the cached version).
   - Adding a new image: you need a rebuild anyway, but only because of the new `![...](...)` line in the `.md` file.
 - Changes to `Dockerfile` or `requirements.txt` need no extra step: `build.sh` rebuilds the Docker image on every run, and this is quick when nothing has changed.
+
+## Publishing your page
+
+1. Run `./build.sh` (or `./build.sh ~/my-travels`) so that `notes/index.html` is up to date.
+2. Upload **only** `index.html` and the `images/` folder, keeping them side by side exactly as they are in `notes/`. The `.md` files are not needed: their text is already embedded in `index.html`, so they can stay private.
+3. Any static host works (GitHub Pages, Netlify, Cloudflare Pages, Nginx/Apache...); no server-side code is required. Visitors need an internet connection (D3 is loaded from cdnjs and flags from flagcdn.com); the favicon is embedded.
+4. Everything you upload becomes public: check the notes and the images first, and re-run the build and re-upload after each change.
 
 ## Project layout
 
@@ -92,7 +99,7 @@ Run `./build.sh` only when the content embedded in `index.html` changes:
 | `data/countries.geojson` | Country borders (Natural Earth 1:50m, public domain) |
 | `notes/` | Example notes (one Markdown file per country), images in `notes/images/`; your own notes live in a separate data folder |
 | `favicon.png` | Page favicon and project logo, embedded into `index.html` at build time |
-| `index.html` | Generated page (do not edit by hand) |
+| `notes/index.html` | Generated page (do not edit by hand) |
 
 ## Technical notes
 
