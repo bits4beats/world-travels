@@ -6,19 +6,91 @@
 <title>World Travels</title>
 <link rel="icon" type="image/png" href="__FAVICON__">
 <link rel="apple-touch-icon" href="__FAVICON__">
+<script>
+// Theme: ?theme=dark|light in the URL, else the saved choice, else the system preference.
+// Runs before the first paint so the page never flashes the wrong theme.
+(function () {
+  var t = new URLSearchParams(location.search).get("theme");
+  if (t !== "dark" && t !== "light") {
+    try { t = localStorage.getItem("wt-theme"); } catch (e) { t = null; }
+  }
+  if (t !== "dark" && t !== "light") {
+    t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 <style>
   :root {
-    --sea: #cfe8f5;
     --ink: #1f2933;
     --panel: #ffffffee;
+    --panel-hover: #fff;
     --accent: #d6336c;
+    --bg-from: #e3f3fb;
+    --bg-to: #b9dcee;
+    --title-shadow: #fff;
+    --sea-a: #d9effa;
+    --sea-b: #a9d3ea;
+    --ocean-a: #cdeaf9;
+    --ocean-b: #8cc3e3;
+    --ocean-c: #4f8fbf;
+    --globe-glow: #5aa0d0aa;
+    --globe-shadow: #0b2a4455;
+    --graticule: #ffffff;
+    --country-stroke: #fff;
+    --country-hover-stroke: #333;
+    --tooltip-bg: #1f2933e6;
+    --modal-bg: #fff;
+    --modal-border: #e5e7eb;
+    --chip-bg: #f1f3f5;
+    --link: #1c6ed5;
+    --badge: #2b8a3e;
+    --empty: #868e96;
+    --table-border: #ddd;
+    --quote-border: #ced4da;
+    --quote-text: #495057;
+    --flag-bg: #eee;
+    --shadow: #0003;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --ink: #e6edf3;
+    --panel: #161d27ee;
+    --panel-hover: #222c3a;
+    --accent: #ff6b9d;
+    --bg-from: #0f1a2b;
+    --bg-to: #060b14;
+    --title-shadow: #000;
+    --sea-a: #12263d;
+    --sea-b: #0b1829;
+    --ocean-a: #1d4468;
+    --ocean-b: #112f4d;
+    --ocean-c: #08182b;
+    --globe-glow: #3b82c455;
+    --globe-shadow: #000000aa;
+    --graticule: #8fb4d9;
+    --country-stroke: #0b1320;
+    --country-hover-stroke: #fff;
+    --tooltip-bg: #000000e6;
+    --modal-bg: #1a222d;
+    --modal-border: #2d3846;
+    --chip-bg: #2a3442;
+    --link: #6cb2ff;
+    --badge: #69db7c;
+    --empty: #8b97a6;
+    --table-border: #3a4656;
+    --quote-border: #4a586a;
+    --quote-text: #b6c0cc;
+    --flag-bg: #2a3442;
+    --shadow: #0008;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; overflow: hidden; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--ink);
-    background: radial-gradient(ellipse at center, #e3f3fb 0%, #b9dcee 100%);
+    background: radial-gradient(ellipse at center, var(--bg-from) 0%, var(--bg-to) 100%);
   }
   header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 5;
@@ -26,22 +98,22 @@
   }
   header h1 {
     margin: 0; font-size: 1.6rem; letter-spacing: .04em;
-    text-shadow: 0 1px 0 #fff, 0 0 8px #fff;
+    text-shadow: 0 1px 0 var(--title-shadow), 0 0 8px var(--title-shadow);
   }
   header p { margin: 2px 0 0; font-size: .8rem; opacity: .7; }
 
   #map { width: 100%; height: 100%; display: block; cursor: grab; }
   #map.dragging { cursor: grabbing; }
   .sphere { fill: url(#seaGradient); }
-  #map.globe .sphere { fill: url(#oceanGlobe); filter: drop-shadow(0 0 14px #5aa0d0aa) drop-shadow(0 6px 18px #0b2a4455); }
+  #map.globe .sphere { fill: url(#oceanGlobe); filter: drop-shadow(0 0 14px var(--globe-glow)) drop-shadow(0 6px 18px var(--globe-shadow)); }
   .shine { fill: url(#shineGlobe); pointer-events: none; display: none; }
   #map.globe .shine { display: inline; }
-  .graticule { fill: none; stroke: #ffffff; stroke-opacity: .5; stroke-width: .5; vector-effect: non-scaling-stroke; }
+  .graticule { fill: none; stroke: var(--graticule); stroke-opacity: .5; stroke-width: .5; vector-effect: non-scaling-stroke; }
   .country {
-    stroke: #fff; stroke-width: .6; vector-effect: non-scaling-stroke;
+    stroke: var(--country-stroke); stroke-width: .6; vector-effect: non-scaling-stroke;
     cursor: pointer; transition: filter .15s;
   }
-  .country:hover { filter: brightness(1.12) saturate(1.2); stroke: #333; stroke-width: 1.2; }
+  .country:hover { filter: brightness(1.12) saturate(1.2); stroke: var(--country-hover-stroke); stroke-width: 1.2; }
   .country.visited { stroke-width: 1.3; filter: url(#visGlow); }
   .country.visited:hover { filter: url(#visGlow) brightness(1.1) saturate(1.15); stroke-width: 1.8; }
 
@@ -59,7 +131,7 @@
 
   #tooltip {
     position: fixed; z-index: 6; pointer-events: none; display: none;
-    background: #1f2933e6; color: #fff; padding: 5px 10px; border-radius: 6px;
+    background: var(--tooltip-bg); color: #fff; padding: 5px 10px; border-radius: 6px;
     font-size: .85rem; white-space: nowrap;
   }
   #tooltip .v { color: #8ce99a; margin-left: 6px; }
@@ -67,11 +139,11 @@
   #legend {
     position: fixed; left: 14px; bottom: 14px; z-index: 5;
     background: var(--panel); border-radius: 10px; padding: 10px 14px;
-    box-shadow: 0 2px 10px #0003; max-width: 260px; font-size: .85rem;
+    box-shadow: 0 2px 10px var(--shadow); max-width: 260px; font-size: .85rem;
   }
   #legend h2 { margin: 0 0 6px; font-size: .95rem; }
   #legend .count { font-weight: 700; color: var(--accent); }
-  #legend ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 28vh; overflow-y: auto; }
+  #legend ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 28vh; overflow-y: auto; scrollbar-color: var(--quote-border) transparent; }
   #legend li a { color: inherit; text-decoration: none; display: block; padding: 2px 0; cursor: pointer; }
   #legend li a:hover { color: var(--accent); text-decoration: underline; }
   #legend .key { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; font-size: .75rem; opacity: .8; }
@@ -81,9 +153,9 @@
   }
   #zoomctl button {
     width: 36px; height: 36px; border: 0; border-radius: 8px; background: var(--panel);
-    box-shadow: 0 2px 8px #0003; font-size: 1.2rem; cursor: pointer;
+    box-shadow: 0 2px 8px var(--shadow); font-size: 1.2rem; color: var(--ink); cursor: pointer;
   }
-  #zoomctl button:hover { background: #fff; }
+  #zoomctl button:hover { background: var(--panel-hover); }
 
   /* Popup */
   #overlay {
@@ -92,36 +164,36 @@
   }
   #overlay.open { display: flex; }
   #modal {
-    background: #fff; border-radius: 14px; width: min(760px, 100%); max-height: 88vh;
+    background: var(--modal-bg); color: var(--ink); border-radius: 14px; width: min(760px, 100%); max-height: 88vh;
     display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px #0006;
     position: relative;
   }
   #modal .head {
     display: flex; align-items: center; gap: 16px; padding: 18px 56px 14px 22px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--modal-border);
   }
   #modal .flag {
     width: 84px; height: 56px; object-fit: cover; border-radius: 4px;
-    box-shadow: 0 1px 4px #0004; background: #eee; flex: none;
+    box-shadow: 0 1px 4px #0004; background: var(--flag-bg); flex: none;
   }
   #modal .flag.none { display: none; }
   #modal h2 { margin: 0; font-size: 1.6rem; }
   #modal .links { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-  #modal .wiki { font-size: .9rem; color: #1c6ed5; }
-  #modal .badge { font-size: .75rem; color: #2b8a3e; font-weight: 600; }
+  #modal .wiki { font-size: .9rem; color: var(--link); }
+  #modal .badge { font-size: .75rem; color: var(--badge); font-weight: 600; }
   #close {
     position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border: 0;
-    border-radius: 50%; background: #f1f3f5; font-size: 1.3rem; line-height: 1; cursor: pointer;
+    border-radius: 50%; background: var(--chip-bg); color: var(--ink); font-size: 1.3rem; line-height: 1; cursor: pointer;
   }
   #close:hover { background: #e03131; color: #fff; }
-  #notes { padding: 16px 22px 24px; overflow-y: auto; line-height: 1.55; }
+  #notes { padding: 16px 22px 24px; overflow-y: auto; line-height: 1.55; scrollbar-color: var(--quote-border) transparent; }
   #notes img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
   #notes h1, #notes h2, #notes h3 { margin: 1em 0 .4em; }
-  #notes .empty { color: #868e96; font-style: italic; }
+  #notes .empty { color: var(--empty); font-style: italic; }
   #notes table { border-collapse: collapse; }
-  #notes td, #notes th { border: 1px solid #ddd; padding: 4px 8px; }
-  #notes code { background: #f1f3f5; padding: 1px 5px; border-radius: 4px; }
-  #notes blockquote { margin: 8px 0; padding-left: 12px; border-left: 4px solid #ced4da; color: #495057; }
+  #notes td, #notes th { border: 1px solid var(--table-border); padding: 4px 8px; }
+  #notes code { background: var(--chip-bg); padding: 1px 5px; border-radius: 4px; }
+  #notes blockquote { margin: 8px 0; padding-left: 12px; border-left: 4px solid var(--quote-border); color: var(--quote-text); }
 </style>
 </head>
 <body>
@@ -134,13 +206,13 @@
 <svg id="map" role="img" aria-label="World map">
   <defs>
     <linearGradient id="seaGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#d9effa"/>
-      <stop offset="1" stop-color="#a9d3ea"/>
+      <stop offset="0" style="stop-color: var(--sea-a)"/>
+      <stop offset="1" style="stop-color: var(--sea-b)"/>
     </linearGradient>
     <radialGradient id="oceanGlobe" cx="38%" cy="32%" r="72%">
-      <stop offset="0" stop-color="#cdeaf9"/>
-      <stop offset=".65" stop-color="#8cc3e3"/>
-      <stop offset="1" stop-color="#4f8fbf"/>
+      <stop offset="0" style="stop-color: var(--ocean-a)"/>
+      <stop offset=".65" style="stop-color: var(--ocean-b)"/>
+      <stop offset="1" style="stop-color: var(--ocean-c)"/>
     </radialGradient>
     <radialGradient id="shineGlobe" cx="36%" cy="30%" r="75%">
       <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
@@ -169,7 +241,7 @@
   <h2>Visited: <span class="count" id="vcount"></span></h2>
   <div class="key">
     <span>📍 highlighted = visited</span>
-    <span>light grey = yet to discover</span>
+    <span>grey = yet to discover</span>
   </div>
   <ul id="vlist"></ul>
 </div>
@@ -178,6 +250,7 @@
   <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
   <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
   <button id="zreset" title="Reset view" aria-label="Reset view">⟲</button>
+  <button id="ztheme"></button>
   <button id="zmode"></button>
 </div>
 
@@ -206,8 +279,13 @@ const NOTES = __NOTES__;   // { ISO2: "<html>" } — only countries that have a 
 
 // Palette: full (visited) vs muted (still to discover), indexed by MAPCOLOR7 (1..7)
 const FULL  = [null, "#f4a261", "#e9c46a", "#8ecf8e", "#6fb5e6", "#c79be0", "#f28b9b", "#7fd1c4"];
-// Not visited: full colour faded towards light grey (only a hint of colour remains)
-const MUTED = FULL.map(c => c && d3.interpolateRgb(c, "#eef1f3")(0.75));
+// Not visited: full colour faded towards grey (light grey, or dark grey in the dark theme)
+const MUTE_TO = {light: "#eef1f3", dark: "#2b3440"};
+const mutedPalette = t => FULL.map(c => c && d3.interpolateRgb(c, MUTE_TO[t])(t === "dark" ? 0.82 : 0.75));
+const currentTheme = () => document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+let MUTED = mutedPalette(currentTheme());
+const fallbackFill = () => currentTheme() === "dark" ? "#27303b" : "#e5e7e9";
+const countryFill = d => visited(d.properties.id) ? visFill(d.properties.color) : (MUTED[d.properties.color] || fallbackFill());
 
 // Visited: vertical gradient per colour (raised look) + darker border
 const defs = d3.select("#map defs");
@@ -255,7 +333,7 @@ const countries = viewport.select("#countries").selectAll("path")
   // visited countries last, so border and glow sit above their neighbours
   .data([...features].sort((a, b) => visited(a.properties.id) - visited(b.properties.id))).join("path")
   .attr("class", d => "country" + (visited(d.properties.id) ? " visited" : ""))
-  .attr("fill", d => visited(d.properties.id) ? visFill(d.properties.color) : (MUTED[d.properties.color] || "#e5e7e9"))
+  .attr("fill", countryFill)
   .each(function (d) { if (visited(d.properties.id)) this.style.stroke = visStroke(d.properties.color); })
   .on("mousemove", (ev, d) => {
     tip.style.display = "block";
@@ -386,6 +464,30 @@ function setMode(m) {
   render();
 }
 toggleBtn.onclick = () => setMode(mode === "globe" ? "flat" : "globe");
+
+// --- Theme switch ---------------------------------------------------------
+const themeBtn = document.getElementById("ztheme");
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  MUTED = mutedPalette(t);
+  countries.attr("fill", countryFill);
+  themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+  themeBtn.title = themeBtn.ariaLabel = t === "dark" ? "Switch to light theme" : "Switch to dark theme";
+}
+themeBtn.onclick = () => {
+  const t = currentTheme() === "dark" ? "light" : "dark";
+  applyTheme(t);
+  try { localStorage.setItem("wt-theme", t); } catch (e) {}
+};
+// Without a saved choice, follow the system theme when it changes
+if (window.matchMedia) {
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
+    let saved = null;
+    try { saved = localStorage.getItem("wt-theme"); } catch (err) {}
+    if (!saved && !new URLSearchParams(location.search).get("theme")) applyTheme(e.matches ? "dark" : "light");
+  });
+}
+applyTheme(currentTheme());
 
 // --- Zoom buttons ---------------------------------------------------------
 function zoomBy(f) {
