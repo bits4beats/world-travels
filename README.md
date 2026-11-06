@@ -13,10 +13,13 @@ Only **Docker**. Python and its dependencies run inside a container (`python:3.1
 ## Usage
 
 ```bash
-./build.sh        # regenerates index.html
+./build.sh              # builds the example notes in this repo -> ./index.html
+./build.sh ~/my-travels # builds your own notes folder -> ~/my-travels/index.html
 ```
 
 Then open `index.html` in your browser (a double click is enough, no server needed) and reload the page after each rebuild.
+
+The notes shipped in this repo (`notes/IT.md`) are only an **example**. To keep your own trips private, see [Keeping your own notes private](#keeping-your-own-notes-private).
 
 ## Adding notes to a country
 
@@ -30,6 +33,37 @@ Then open `index.html` in your browser (a double click is enough, no server need
 4. Run `./build.sh` and reload the page.
 
 You can link directly to a country with `index.html#IT` (on the globe, the country is brought to the centre).
+
+## Keeping your own notes private
+
+This repository is meant to be public and contains only the engine plus an example note. Keep your real notes and photos in a **separate folder, ideally a private git repo**, and point the build at it.
+
+1. Create the folder (or a private GitLab/GitHub repo and clone it), for example `~/my-travels`, with this layout:
+   ```
+   my-travels/
+     notes/
+       FR.md
+       JP.md
+       images/
+         FR_01.jpg
+   ```
+   Notes and images work exactly as described above; image paths stay relative (`notes/images/FR_01.jpg`).
+2. Build from the engine, passing the folder:
+   ```bash
+   ./build.sh ~/my-travels
+   ```
+   The page is written to `~/my-travels/index.html`: open that file. Nothing is written inside the engine repo.
+3. Commit `notes/` to your private repo. `index.html` can be committed too (handy to open it anywhere) or ignored, since it can always be regenerated.
+
+**Optional: engine as a submodule.** Inside your private repo you can embed this one and update it whenever you like:
+
+```bash
+git submodule add <url-of-this-repo> engine
+engine/build.sh .                    # builds the notes of the private repo
+git submodule update --remote engine # later: pull engine updates
+```
+
+Never add personal notes or photos to the public repo: `notes/IT.md` is just a demo and can be deleted or replaced.
 
 ## When to rebuild
 
@@ -46,11 +80,11 @@ Run `./build.sh` only when the content embedded in `index.html` changes:
 
 | File | Purpose |
 | --- | --- |
-| `build.sh` | Builds the Docker image and runs `build.py` inside it |
-| `build.py` | Converts the Markdown notes and generates `index.html` |
+| `build.sh` | Builds the Docker image and runs `build.py` inside it; takes an optional data folder |
+| `build.py` | Converts the Markdown notes of a data folder and generates its `index.html` |
 | `template.html` | Page source (CSS + JS) |
 | `data/countries.geojson` | Country borders (Natural Earth 1:50m, public domain) |
-| `notes/` | One Markdown note per country, images in `notes/images/` |
+| `notes/` | Example notes (one Markdown file per country), images in `notes/images/`; your own notes live in a separate data folder |
 | `index.html` | Generated page (do not edit by hand) |
 
 ## Technical notes
@@ -58,3 +92,7 @@ Run `./build.sh` only when the content embedded in `index.html` changes:
 - The map is drawn with [D3](https://d3js.org/) (loaded from cdnjs) and flags come from [flagcdn.com](https://flagcdn.com), so an internet connection is needed to see them.
 - Country colours follow Natural Earth's `MAPCOLOR7` property, which is designed so that neighbouring countries never share a colour.
 - Large images make the page heavier to load: resizing photos (e.g. to 1600 px wide) before adding them is recommended.
+
+## License
+
+[MIT](LICENSE)

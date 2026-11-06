@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Generate index.html from template.html, data/countries.geojson and notes/*.md."""
+"""Generate index.html from template.html, data/countries.geojson and <data dir>/notes/*.md.
+
+Usage: build.py [DATA_DIR]
+
+DATA_DIR holds your own notes/ folder and receives the generated index.html.
+It defaults to the repository root (which contains the example notes).
+"""
 import json
 import re
 import sys
@@ -9,9 +15,7 @@ import markdown
 
 ROOT = Path(__file__).resolve().parent
 GEO_FILE = ROOT / "data" / "countries.geojson"
-NOTES_DIR = ROOT / "notes"
 TEMPLATE = ROOT / "template.html"
-OUTPUT = ROOT / "index.html"
 
 
 def js_json(obj) -> str:
@@ -21,12 +25,24 @@ def js_json(obj) -> str:
 
 
 def main() -> int:
+    if len(sys.argv) > 2:
+        print("Usage: build.py [DATA_DIR]", file=sys.stderr)
+        return 2
+    data_dir = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else ROOT
+    notes_dir = data_dir / "notes"
+    output = data_dir / "index.html"
+
+    if not notes_dir.is_dir():
+        print(f"Error: notes folder not found: {notes_dir}\n"
+              f"Create it and add notes/<CODE>.md files (see README).", file=sys.stderr)
+        return 1
+
     geo = json.loads(GEO_FILE.read_text(encoding="utf-8"))
     ids = {f["properties"]["id"] for f in geo["features"]}
 
     notes = {}
     unknown = []
-    for md_file in sorted(NOTES_DIR.glob("*.md")):
+    for md_file in sorted(notes_dir.glob("*.md")):
         code = md_file.stem.upper()
         text = md_file.read_text(encoding="utf-8")
         html = markdown.markdown(text, extensions=["extra", "sane_lists", "nl2br"])
@@ -40,10 +56,10 @@ def main() -> int:
     if re.search(r"__(GEO|NOTES)__", page):
         print("Error: placeholders were not replaced", file=sys.stderr)
         return 1
-    OUTPUT.write_text(page, encoding="utf-8")
+    output.write_text(page, encoding="utf-8")
 
-    print(f"Countries: {len(geo['features'])} | Notes found: {len(notes)} -> {OUTPUT.name} "
-          f"({OUTPUT.stat().st_size // 1024} KB)")
+    print(f"Countries: {len(geo['features'])} | Notes found: {len(notes)} -> {output.name} "
+          f"({output.stat().st_size // 1024} KB)")
     if notes:
         print("Visited:", ", ".join(sorted(notes)))
     for name in unknown:
